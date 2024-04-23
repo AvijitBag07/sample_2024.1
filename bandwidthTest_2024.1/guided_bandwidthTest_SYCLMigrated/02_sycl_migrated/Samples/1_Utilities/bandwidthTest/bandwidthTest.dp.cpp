@@ -50,7 +50,7 @@
 #include <memory>
 
 static const char *sSDKsample = "SYCL Bandwidth Test";
-sycl::queue sycl_queue{sycl::property::queue::in_order()};
+
 // defines, project
 #define MEMCOPY_ITERATIONS 100
 #define DEFAULT_SIZE (32 * (1e6))      // 32 M
@@ -595,10 +595,10 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
   // pinned memory mode - use special function to get OS-pinned memory
     
     DPCT_CHECK_ERROR(h_idata = (unsigned char *)sycl::malloc_host(
-                             memSize, sycl_queue));
+                             memSize, dpct::get_in_order_queue()));
     
     DPCT_CHECK_ERROR(h_odata = (unsigned char *)sycl::malloc_host(
-                             memSize, sycl_queue));
+                             memSize, dpct::get_in_order_queue()));
   } else {
     // pageable memory mode - use malloc
     h_idata = (unsigned char *)malloc(memSize);
@@ -619,26 +619,23 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
   unsigned char *d_idata;
   
   DPCT_CHECK_ERROR(d_idata = (unsigned char *)sycl::malloc_device(
-                           memSize, sycl_queue));
+                           memSize, dpct::get_in_order_queue()));
 
   // initialize the device memory
   DPCT_CHECK_ERROR(
-      sycl_queue.memcpy(d_idata, h_idata, memSize).wait());
+      dpct::get_in_order_queue().memcpy(d_idata, h_idata, memSize).wait());
 
   // copy data from GPU to Host
   if (PINNED == memMode) {
     if (bDontUseGPUTiming) sdkStartTimer(&timer);
     DPCT_CHECK_ERROR(
-        dpct::sync_barrier(start, &sycl_queue));
+        dpct::sync_barrier(start, &dpct::get_in_order_queue()));
     for (unsigned int i = 0; i < MEMCOPY_ITERATIONS; i++) {
       DPCT_CHECK_ERROR(
-          stop_q_ct1_1 =
-              sycl_queue.memcpy(h_odata, d_idata, memSize));
+          dpct::get_in_order_queue().memcpy(h_odata, d_idata, memSize));
     }
-    stop_q_ct1_1.wait();
-    stop_ct1 = std::chrono::steady_clock::now();
     
-    DPCT_CHECK_ERROR(sycl_queue.wait());
+    DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
     DPCT_CHECK_ERROR(
         elapsedTimeInMs = (stop->get_profiling_info<
                                sycl::info::event_profiling::command_end>() -
@@ -655,7 +652,7 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
     for (unsigned int i = 0; i < MEMCOPY_ITERATIONS; i++) {
       sdkStartTimer(&timer);
       DPCT_CHECK_ERROR(
-          sycl_queue.memcpy(h_odata, d_idata, memSize).wait());
+          dpct::get_in_order_queue().memcpy(h_odata, d_idata, memSize).wait());
       sdkStopTimer(&timer);
       elapsedTimeInMs += sdkGetTimerValue(&timer);
       sdkResetTimer(&timer);
@@ -673,15 +670,14 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
   sdkDeleteTimer(&timer);
 
   if (PINNED == memMode) {
-    DPCT_CHECK_ERROR(sycl::free(h_idata, sycl_queue));
-    DPCT_CHECK_ERROR(sycl::free(h_odata, sycl_queue));
+    DPCT_CHECK_ERROR(sycl::free(h_idata, dpct::get_in_order_queue()));
+    DPCT_CHECK_ERROR(sycl::free(h_odata, dpct::get_in_order_queue()));
   } else {
     free(h_idata);
     free(h_odata);
   }
 
-  checkCudaErrors(
-      DPCT_CHECK_ERROR(sycl::free(d_idata, sycl_queue)));
+     DPCT_CHECK_ERROR(dpct::dpct_free(d_idata, dpct::get_in_order_queue()));
 
   return bandwidthInGBs;
 }
@@ -707,7 +703,7 @@ float testHostToDeviceTransfer(unsigned int memSize, memoryMode memMode,
     // pinned memory mode - use special function to get OS-pinned memory
     
         DPCT_CHECK_ERROR(h_odata = (unsigned char *)sycl::malloc_host(
-                             memSize, sycl_queue));
+                             memSize, dpct::get_in_order_queue()));
   } else {
     // pageable memory mode - use malloc
     h_odata = (unsigned char *)malloc(memSize);
@@ -739,20 +735,20 @@ float testHostToDeviceTransfer(unsigned int memSize, memoryMode memMode,
   // allocate device memory
   unsigned char *d_idata;
   DPCT_CHECK_ERROR(d_idata = (unsigned char *)sycl::malloc_device(
-                           memSize, sycl_queue));
+                           memSize, dpct::get_in_order_queue()));
 
   // copy host memory to device memory
   if (PINNED == memMode) {
     if (bDontUseGPUTiming) sdkStartTimer(&timer);
     DPCT_CHECK_ERROR(
-        dpct::sync_barrier(start, &sycl_queue));
+        dpct::sync_barrier(start, &dpct::get_in_order_queue()));
     for (unsigned int i = 0; i < MEMCOPY_ITERATIONS; i++) {
       DPCT_CHECK_ERROR(
-              sycl_queue.memcpy(d_idata, h_odata, memSize));
+              dpct::get_in_order_queue().memcpy(d_idata, h_odata, memSize));
     }
     DPCT_CHECK_ERROR(
-        dpct::sync_barrier(stop, &sycl_queue));
-    DPCT_CHECK_ERROR(sycl_queue.wait());
+        dpct::sync_barrier(stop, &dpct::get_in_order_queue()));
+    DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
     DPCT_CHECK_ERROR(
         elapsedTimeInMs = (stop->get_profiling_info<
                                sycl::info::event_profiling::command_end>() -
@@ -769,7 +765,7 @@ float testHostToDeviceTransfer(unsigned int memSize, memoryMode memMode,
     for (unsigned int i = 0; i < MEMCOPY_ITERATIONS; i++) {
       sdkStartTimer(&timer);
       checkCudaErrors(DPCT_CHECK_ERROR(
-          sycl_queue.memcpy(d_idata, h_odata, memSize).wait()));
+          dpct::get_in_order_queue().memcpy(d_idata, h_odata, memSize).wait()));
       sdkStopTimer(&timer);
       elapsedTimeInMs += sdkGetTimerValue(&timer);
       sdkResetTimer(&timer);
@@ -787,14 +783,14 @@ float testHostToDeviceTransfer(unsigned int memSize, memoryMode memMode,
   sdkDeleteTimer(&timer);
 
   if (PINNED == memMode) {
-    DPCT_CHECK_ERROR(sycl::free(h_odata, sycl_queue));
+    DPCT_CHECK_ERROR(sycl::free(h_odata, dpct::get_in_order_queue()));
   } else {
     free(h_odata);
   }
 
   free(h_cacheClear1);
   free(h_cacheClear2);
-  DPCT_CHECK_ERROR(sycl::free(d_idata, sycl_queue));
+  DPCT_CHECK_ERROR(dpct::dpct_free(d_idata, dpct::get_in_order_queue()));
 
   return bandwidthInGBs;
 }
@@ -829,32 +825,32 @@ float testDeviceToDeviceTransfer(unsigned int memSize) {
   unsigned char *d_idata;
   
   DPCT_CHECK_ERROR(d_idata = (unsigned char *)sycl::malloc_device(
-                           memSize, sycl_queue));
+                           memSize, dpct::get_in_order_queue()));
   unsigned char *d_odata;
   
   DPCT_CHECK_ERROR(d_odata = (unsigned char *)sycl::malloc_device(
-                           memSize, sycl_queue));
+                           memSize, dpct::get_in_order_queue()));
 
   // initialize memory
   DPCT_CHECK_ERROR(
-      sycl_queue.memcpy(d_idata, h_idata, memSize).wait());
+      dpct::get_in_order_queue().memcpy(d_idata, h_idata, memSize).wait());
 
   // run the memcopy
   sdkStartTimer(&timer);
-  DPCT_CHECK_ERROR(dpct::sync_barrier(start, &sycl_queue));
+  DPCT_CHECK_ERROR(dpct::sync_barrier(start, &dpct::get_in_order_queue()));
 
   for (unsigned int i = 0; i < MEMCOPY_ITERATIONS; i++) {
     DPCT_CHECK_ERROR(
-        sycl_queue.memcpy(d_odata, d_idata, memSize));
+        dpct::get_in_order_queue().memcpy(d_odata, d_idata, memSize));
   }
 
-  DPCT_CHECK_ERROR(dpct::sync_barrier(stop, &sycl_queue));
+  DPCT_CHECK_ERROR(dpct::sync_barrier(stop, &dpct::get_in_order_queue()));
 
   // Since device to device memory copies are non-blocking,
   // cudaDeviceSynchronize() is required in order to get
   // proper timing.
   
-  DPCT_CHECK_ERROR(sycl_queue.wait());
+  DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
 
   // get the total elapsed time in ms
   sdkStopTimer(&timer);
@@ -880,8 +876,8 @@ float testDeviceToDeviceTransfer(unsigned int memSize) {
   DPCT_CHECK_ERROR(dpct::destroy_event(stop));
   DPCT_CHECK_ERROR(dpct::destroy_event(start));
   
-  DPCT_CHECK_ERROR(sycl::free(d_idata, sycl_queue));
-  DPCT_CHECK_ERROR(sycl::free(d_odata, sycl_queue));
+  DPCT_CHECK_ERROR(dpct::dpct_free(d_idata, dpct::get_in_order_queue()));
+  DPCT_CHECK_ERROR(dpct::dpct_free(d_odata, dpct::get_in_order_queue()));
 
   return bandwidthInGBs;
 }
