@@ -593,12 +593,12 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
   // allocate host memory
   if (PINNED == memMode) {
   // pinned memory mode - use special function to get OS-pinned memory
-    
-    DPCT_CHECK_ERROR(h_idata = (unsigned char *)sycl::malloc_host(
+#if DPCT_COMPAT_RT_VERSION >= 2020
+        DPCT_CHECK_ERROR(h_idata = (unsigned char *)sycl::malloc_host(
                              memSize, dpct::get_in_order_queue()));
-    
-    DPCT_CHECK_ERROR(h_odata = (unsigned char *)sycl::malloc_host(
+        DPCT_CHECK_ERROR(h_odata = (unsigned char *)sycl::malloc_host(
                              memSize, dpct::get_in_order_queue()));
+#endif
   } else {
     // pageable memory mode - use malloc
     h_idata = (unsigned char *)malloc(memSize);
@@ -617,8 +617,7 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
 
   // allocate device memory
   unsigned char *d_idata;
-  
-  DPCT_CHECK_ERROR(d_idata = (unsigned char *)sycl::malloc_device(
+      DPCT_CHECK_ERROR(d_idata = (unsigned char *)sycl::malloc_device(
                            memSize, dpct::get_in_order_queue()));
 
   // initialize the device memory
@@ -634,7 +633,9 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
       DPCT_CHECK_ERROR(
           dpct::get_in_order_queue().memcpy(h_odata, d_idata, memSize));
     }
-    
+    DPCT_CHECK_ERROR(
+        dpct::sync_barrier(stop, &dpct::get_in_order_queue()));
+  
     DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
     DPCT_CHECK_ERROR(
         elapsedTimeInMs = (stop->get_profiling_info<
@@ -651,8 +652,8 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
     elapsedTimeInMs = 0;
     for (unsigned int i = 0; i < MEMCOPY_ITERATIONS; i++) {
       sdkStartTimer(&timer);
-      DPCT_CHECK_ERROR(
-          dpct::get_in_order_queue().memcpy(h_odata, d_idata, memSize).wait());
+      checkCudaErrors(DPCT_CHECK_ERROR(
+          dpct::get_in_order_queue().memcpy(h_odata, d_idata, memSize).wait()));
       sdkStopTimer(&timer);
       elapsedTimeInMs += sdkGetTimerValue(&timer);
       sdkResetTimer(&timer);
@@ -670,14 +671,14 @@ float testDeviceToHostTransfer(unsigned int memSize, memoryMode memMode,
   sdkDeleteTimer(&timer);
 
   if (PINNED == memMode) {
-    DPCT_CHECK_ERROR(sycl::free(h_idata, dpct::get_in_order_queue()));
-    DPCT_CHECK_ERROR(sycl::free(h_odata, dpct::get_in_order_queue()));
+        DPCT_CHECK_ERROR(sycl::free(h_idata, dpct::get_in_order_queue()));
+        DPCT_CHECK_ERROR(sycl::free(h_odata, dpct::get_in_order_queue()));
   } else {
     free(h_idata);
     free(h_odata);
   }
 
-     DPCT_CHECK_ERROR(dpct::dpct_free(d_idata, dpct::get_in_order_queue()));
+      DPCT_CHECK_ERROR(dpct::dpct_free(d_idata, dpct::get_in_order_queue()));
 
   return bandwidthInGBs;
 }
