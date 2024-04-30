@@ -29,9 +29,9 @@ This sample contains two versions of the code in the following folders:
 
 | Optimized for         | Description
 |:---                   |:---
-| OS                    | Ubuntu* 20.04
+| OS                    | Ubuntu* 22.04
 | Hardware              | Intel® Gen9 <br>Intel® Gen11 <br>Intel® Xeon CPU <br>Intel® Data Center GPU Max <br> Nvidia Tesla P100 <br> Nvidia A100 <br> Nvidia H100 
-| Software              | SYCLomatic (Tag - 20231004) <br> Intel® oneAPI Base Toolkit (Base Kit) version 2024.0 <br> oneAPI for NVIDIA GPU plugin from Codeplay (to run SYCL™ applications on NVIDIA® GPUs)
+| Software              | SYCLomatic (Tag - 20240403) <br> Intel® oneAPI Base Toolkit (Base Kit) version 2024.1 <br> oneAPI for NVIDIA GPU plugin from Codeplay (to run SYCL™ applications on NVIDIA® GPUs)
 
 For information on how to use SYCLomatic, refer to the materials at *[Migrate from CUDA* to C++ with SYCL*](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/migrate-from-cuda-to-cpp-with-sycl.html)*.<br> How to run SYCL™ applications on NVIDIA® GPUs, refer to 
 [oneAPI for NVIDIA GPUs](https://developer.codeplay.com/products/oneapi/nvidia/) plugin from Codeplay.
@@ -83,17 +83,6 @@ For this sample, the SYCLomatic tool automatically migrates 100% of the CUDA cod
    ```
    c2s -p compile_commands.json --in-root ../../.. --gen-helper-function 
    ```
-## Manual Workarounds
-The following manual change has been done in order to complete the migration.
-   
-1. It has been changed manually.
-      ```
-      dpct::get_in_order_queue()
-      ```
-      Manually defined as below
-      ```
-      sycl::queue sycl_queue{sycl::property::queue::in_order()};
-      ```
 
 ## Build and Run the `BandwidthTest` Sample
 
@@ -195,7 +184,7 @@ the `VERBOSE=1` argument:
 ```
 make VERBOSE=1
 ```
-If you receive an error message, troubleshoot the problem using the **Diagnostics Utility for Intel® oneAPI Toolkits**. The diagnostic utility provides configuration and system checks to help find missing dependencies, permissions errors, and other issues. See the [Diagnostics Utility for Intel® oneAPI Toolkits User Guide](https://www.intel.com/content/www/us/en/docs/oneapi/user-guide-diagnostic-utility/2024-0/overview.html) for more information on using the utility.
+If you receive an error message, troubleshoot the problem using the **Diagnostics Utility for Intel® oneAPI Toolkits**. The diagnostic utility provides configuration and system checks to help find missing dependencies, permissions errors, and other issues. See the [Diagnostics Utility for Intel® oneAPI Toolkits User Guide](https://www.intel.com/content/www/us/en/docs/oneapi/user-guide-diagnostic-utility/2024-1/overview.html) for more information on using the utility.
 
 
 ## License
