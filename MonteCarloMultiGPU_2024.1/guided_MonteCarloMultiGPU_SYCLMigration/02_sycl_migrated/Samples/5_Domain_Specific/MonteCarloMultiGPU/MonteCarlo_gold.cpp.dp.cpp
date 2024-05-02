@@ -106,7 +106,7 @@ extern "C" void MonteCarloCPU(TOptionValue &callValue, TOptionData optionData,
   DPCT_CHECK_ERROR(gen =
       dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10));
   unsigned long long seed = 1234ULL;
-  checkCudaErrors(DPCT_CHECK_ERROR(gen->set_seed(seed)));
+  DPCT_CHECK_ERROR(gen->set_seed(seed));
 
   if (h_Samples != NULL) {
     samples = h_Samples;
