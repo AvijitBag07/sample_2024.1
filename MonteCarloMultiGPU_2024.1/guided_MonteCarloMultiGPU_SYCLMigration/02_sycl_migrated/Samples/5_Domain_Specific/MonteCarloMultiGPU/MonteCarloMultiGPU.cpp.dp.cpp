@@ -68,8 +68,8 @@ int adjustProblemSize(int GPU_N, int default_nOptions) {
   // select problem size
   for (int i = 0; i < GPU_N; i++) {
     dpct::device_info deviceProp;
-    checkCudaErrors(DPCT_CHECK_ERROR(dpct::get_device_info(
-        deviceProp, dpct::dev_mgr::instance().get_device(i))));
+    DPCT_CHECK_ERROR(dpct::get_device_info(
+        deviceProp, dpct::dev_mgr::instance().get_device(i)));
 
     int cudaCores = _ConvertSMVer2Cores(deviceProp.get_major_version(),
                                         deviceProp.get_minor_version()) *
@@ -167,8 +167,8 @@ static void multiSolver(TOptionPlan *plan, int nPlans) {
     DPCT_CHECK_ERROR(dpct::select_device(plan[i].device));
 
     dpct::device_info deviceProp;
-    checkCudaErrors(DPCT_CHECK_ERROR(dpct::get_device_info(
-        deviceProp, dpct::dev_mgr::instance().get_device(plan[i].device))));
+    DPCT_CHECK_ERROR(dpct::get_device_info(
+        deviceProp, dpct::dev_mgr::instance().get_device(plan[i].device)));
 
     // Allocate intermediate memory for MC integrator
     // and initialize RNG state
@@ -177,9 +177,9 @@ static void multiSolver(TOptionPlan *plan, int nPlans) {
 
   for (int i = 0; i < nPlans; i++) {
 
-    checkCudaErrors(DPCT_CHECK_ERROR(dpct::select_device(plan[i].device)));
-    checkCudaErrors(
-        DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw()));
+    DPCT_CHECK_ERROR(dpct::select_device(plan[i].device));
+    
+    DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
   }
 
   // Start the timer
