@@ -112,8 +112,8 @@ extern "C" void MonteCarloCPU(TOptionValue &callValue, TOptionData optionData,
     samples = h_Samples;
   } else {
     samples = (float *)malloc(pathN * sizeof(float));
-    checkCudaErrors(
-        DPCT_CHECK_ERROR(gen->generate_gaussian(samples, pathN, 0.0, 1.0)));
+    
+    DPCT_CHECK_ERROR(gen->generate_gaussian(samples, pathN, 0.0, 1.0));
   }
 
   // for(int i=0; i<10; i++) printf("CPU sample = %f\n", samples[i]);
@@ -129,7 +129,7 @@ extern "C" void MonteCarloCPU(TOptionValue &callValue, TOptionData optionData,
 
   if (h_Samples == NULL) free(samples);
 
-  checkCudaErrors(DPCT_CHECK_ERROR(gen.reset()));
+  DPCT_CHECK_ERROR(gen.reset());
 
   // Derive average from the total sum and discount by riskfree rate
   callValue.Expected = (float)(exp(-R * T) * sum / (double)pathN);
