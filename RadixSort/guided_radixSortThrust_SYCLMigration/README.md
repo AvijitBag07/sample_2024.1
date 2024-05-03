@@ -118,6 +118,17 @@ You can submit build and run jobs through a Portable Bash Script (PBS). A job is
      | CPU	           |`qsub -l nodes=1:xeon:ppn=2 -d .`
 
 6. Perform build steps as you would on Linux.
+   ```
+   $ mkdir build
+   $ cd build
+   $ cmake .. or ( cmake -D INTEL_MAX_GPU=1 .. ) or ( cmake -D NVIDIA_GPU=1 .. )
+   $ make
+   ```
+   > **Note**:
+   > - By default, no flags are enabled during build which supports Intel® UHD Graphics, Intel® Gen9, Gen11, Xeon CPU.
+   > - Enable **INTEL_MAX_GPU** flag during build which supports Intel® Data Center GPU Max 1550 or 1100 to get optimized performance.
+   > - Enable **NVIDIA_GPU** flag during build which supports NVIDIA GPUs.([oneAPI for NVIDIA GPUs](https://developer.codeplay.com/products/oneapi/nvidia/) plugin   from Codeplay is required to build for NVIDIA GPUs )
+
 7. Run the programs.
 8. Clean up the project files.
    ```
